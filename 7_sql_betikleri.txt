@@ -1,0 +1,43 @@
+CREATE DATABASE `market_automation` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+CREATE TABLE `customers` (
+  `customer_id` int NOT NULL AUTO_INCREMENT,
+  `customer_name` varchar(255) NOT NULL,
+  `customer_address` varchar(255) DEFAULT '',
+  `customer_created_at` datetime DEFAULT NULL,
+  `customer_email` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`customer_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `products` (
+  `product_id` int NOT NULL AUTO_INCREMENT,
+  `product_name` varchar(255) NOT NULL,
+  `product_description` text,
+  `product_price` decimal(10,2) NOT NULL,
+  `product_created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`product_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `sales` (
+  `sale_id` int NOT NULL AUTO_INCREMENT,
+  `customer_id` int DEFAULT NULL,
+  `sale_date` date NOT NULL,
+  PRIMARY KEY (`sale_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `sold_products` (
+  `sold_product_id` int NOT NULL AUTO_INCREMENT,
+  `sale_id` int DEFAULT NULL,
+  `product_id` int DEFAULT NULL,
+  `sold_product_quantity` int DEFAULT NULL,
+  `sold_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`sold_product_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `stock` (
+  `stock_id` int NOT NULL AUTO_INCREMENT,
+  `product_id` int NOT NULL,
+  `stock_quantity` int NOT NULL,
+  `last_updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`stock_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
