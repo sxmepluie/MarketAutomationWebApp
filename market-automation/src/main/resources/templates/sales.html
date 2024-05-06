@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sale Operations</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #1f1f1f;
+        color: #e0e0e0;
+    }
+    
+    h1 {
+    text-align: center;
+    color: #e0e0e0;
+     }
+
+    .nav-menu {
+        list-style-type: none;
+        padding: 0;
+        text-align: center;
+    }
+
+    li {
+        display: inline-block;
+        margin: 10px;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #333;
+        color: #e0e0e0;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #555;
+    }
+
+    input[type="text"], input[type="date"] {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+        background-color: #2b2b2b;
+        color: #e0e0e0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        color: #e0e0e0;
+    }
+
+    th, td {
+        border: 1px solid #333;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #333;
+        color: #e0e0e0;
+    }
+
+    #addSaleForm {
+        text-align: center;
+        margin-top: 20px;
+        display: none;
+    }
+
+    #addForm {
+        display: inline-block;
+        text-align: left;
+    }
+
+    #updateForm {
+        text-align: left;
+    }
+    #addSaleForm,
+    #updateSaleForm {
+    position: fixed;
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    background-color: rgba(31, 31, 31, 0.9); 
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 999; 
+}
+</style>
+
+    
+      </head>
+      <body>
+           <h1>Sale Operations</h1>
+            <div class="row">
+                <div class="col-md-12">
+                    <ul class="nav-menu">
+                        <li><button onclick="showSales()">Show All Sales</button></li>
+                        <li><button onclick="addSaleForm()">Add New Sale</button></li>
+                        <li>       
+                            <input type="text" id="searchInput" placeholder="Search...">
+                            <button onclick="searchSale()">Search Sale</button>
+                        </li> 
+                    </ul>
+                    <div id="saleData">
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Sale Id</th>
+                                    <th>Customer ID</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saleTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="addSaleForm" style="display: none;">
+                        <h2>Add New Sale</h2>
+                        <form id="addForm">
+ 						<button onclick="closeAddSaleForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+                            <label for="customerId">Customer ID:</label><br>
+                            <input type="text" id="customerId" name="customerId"><br>
+                            <label for="saleDate">Date:</label><br>
+                            <input type="date" id="saleDate" name="saleDate"><br><br>
+                            <button type="submit">Add Sale</button>
+                        </form>
+                    </div>
+                    <div id="updateForm" style="display: none;"></div>
+                </div>
+            </div>
+    <script>
+    window.onload = function() {
+        showSales();
+    };
+
+    function addSaleForm() {
+        if (document.getElementById("updateForm")) {
+            document.getElementById("updateForm").style.display = "none";
+        }
+        document.getElementById("addSaleForm").style.display = "block";
+    }
+
+    document.getElementById("addForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const saleData = {
+            customerId: parseInt(formData.get('customerId')),
+            saleDate: formData.get('saleDate')
+        };
+        fetch('/api/sales', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(saleData)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Error adding sale');
+            }
+        })
+        .then(data => {
+            console.log('Sale added successfully:', data);
+            document.getElementById("addSaleForm").style.display = "none";
+            document.getElementById("addForm").reset();
+            showSales();
+        })
+        .catch(error => console.error('Error adding sale:', error));
+    });
+
+    function showSales() {
+        fetch('/api/sales')
+            .then(response => response.json())
+            .then(data => {
+                const saleTableBody = document.getElementById("saleTableBody");
+                saleTableBody.innerHTML = ''; 
+                data.forEach(sale => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = 
+                        `<td>${sale.saleId}</td>
+                        <td>${sale.customerId}</td>
+                        <td>${sale.saleDate}</td>
+                        <td>
+                            <button onclick="deleteSale(${sale.saleId})">Delete</button>
+                            <button onclick="updateSaleForm(${sale.saleId})">Update</button>
+                        </td>`;
+                    saleTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching sales:', error));
+    }
+
+    function searchSale() {
+        const searchQuery = document.getElementById("searchInput").value.toLowerCase(); 
+        const saleTableBody = document.getElementById("saleTableBody");
+        const allRows = saleTableBody.getElementsByTagName("tr");
+        
+        Array.from(allRows).forEach(row => {
+            const saleId = row.getElementsByTagName("td")[0].innerText.toLowerCase();
+            const customerId = row.getElementsByTagName("td")[1].innerText.toLowerCase();
+            if (
+                saleId.includes(searchQuery) ||
+                customerId.includes(searchQuery)
+            ) {
+                row.style.display = ""; 
+            } else {
+                row.style.display = "none"; 
+            }
+        });
+    }
+
+    function deleteSale(saleId) {
+        fetch(`/api/sales/${saleId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Sale deleted successfully');
+                showSales();
+            } else {
+                throw new Error('Failed to delete sale');
+            }
+        })
+        .catch(error => console.error('Error deleting sale:', error));
+    }
+
+    function updateSaleForm(saleId) {
+        if (document.getElementById("addSaleForm")) {
+            document.getElementById("addSaleForm").style.display = "none";
+        }
+        fetch(`/api/sales/${saleId}`)
+            .then(response => response.json())
+            .then(sale => {
+                const updateForm = document.getElementById("updateForm");
+                updateForm.style.display = "block";
+                updateForm.innerHTML = `<form id="updateSaleForm">
+                							<h2>Update Sale</h2>
+                                            <label for="saleIdToUpdate">Sale ID :</label><br>
+                                            <input type="text" id="saleIdToUpdate" name="saleIdToUpdate" value="${saleId}" readonly><br>
+                                            <label for="updatedCustomerId">Customer ID :</label><br>
+                                            <input type="text" id="updatedCustomerId" name="updatedCustomerId" value="${sale.customerId}"><br>
+                                            <label for="updatedSaleDate">Date :</label><br>
+                                            <input type="date" id="updatedSaleDate" name="updatedSaleDate" value="${sale.saleDate}"><br><br>
+                                            <button type="button" onclick="updateSale(${saleId})">Update</button>
+                                            <button type="button" onclick="closeUpdateForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+
+                                        </form>`;
+            })
+            .catch(error => console.error('Error fetching sale details for update:', error));
+    }
+
+    function updateSale(saleId) {
+        const updatedCustomerId = parseInt(document.getElementById("updatedCustomerId").value);
+        const updatedSaleDate = document.getElementById("updatedSaleDate").value;
+        const updatedSaleData = {
+            customerId: updatedCustomerId,
+            saleDate: updatedSaleDate
+        };
+        fetch(`/api/sales/${saleId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedSaleData)
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Sale updated successfully');
+                document.getElementById("updateForm").style.display = "none";
+                showSales();
+            } else {
+                throw new Error('Failed to update sale');
+            }
+        })
+        .catch(error => console.error('Error updating sale:', error));
+    }
+    function closeAddSaleForm() {
+        document.getElementById("addSaleForm").style.display = "none";
+    }
+
+    function closeUpdateForm() {
+        document.getElementById("updateForm").style.display = "none";
+    }
+    </script>
+</body>
+</html>

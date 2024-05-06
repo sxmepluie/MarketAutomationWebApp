@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Operations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1f1f1f;
+            color: #e0e0e0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #e0e0e0;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            display: inline-block;
+            margin: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #333; 
+            color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #555; 
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+            background-color: #2b2b2b;
+            color: #e0e0e0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #e0e0e0;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333;
+            color: #e0e0e0;
+        }
+
+        #addCustomerForm {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #addForm {
+            display: inline-block;
+            text-align: left;
+        }
+
+        #updateForm {
+            text-align: left;
+        }
+
+        #addCustomerForm,
+        #updateForm {
+            position: fixed;
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            background-color: rgba(31, 31, 31, 0.9); 
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 999; 
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Customer Operations</h1>
+    
+    <ul>
+        <li><button onclick="showCustomers()">Show All Customers</button></li>
+        <li><button onclick="addCustomerForm()">Add New Customer</button></li>
+        <li>
+            <input type="text" id="searchInput" placeholder="Search...">
+            <button onclick="searchCustomer()">Search Customer</button>
+        </li>
+    </ul>
+
+    <div id="customerData">
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Address</th>
+                    <th>Customer Email</th>
+                    <th>Customer Created At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customerTableBody"></tbody>
+        </table>
+    </div>
+
+    <div id="addCustomerForm">
+        <button onclick="closeAddCustomerForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+        <h2>Add Customer</h2>    
+        <form id="addForm">
+            <label for="customerName">Name :</label><br>
+            <input type="text" id="customerName" name="customerName"><br>
+            <label for="customerAddress">Address :</label><br>
+            <input type="text" id="customerAddress" name="customerAddress"><br>
+            <label for="customerEmail">Email :</label><br>
+            <input type="text" id="customerEmail" name="customerEmail"><br><br>
+            <button type="submit">Add Customer</button>
+        </form>
+    </div>
+
+    <div id="updateForm" style="display: none;">
+        <button onclick="closeUpdateForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            showCustomers();
+        };
+
+        function showCustomers() {
+            fetch('/api/customers')
+                .then(response => response.json())
+                .then(data => {
+                    const customerTableBody = document.getElementById("customerTableBody");
+                    customerTableBody.innerHTML = ''; 
+                    data.forEach(customer => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `<td>${customer.customerId}</td>
+                                         <td>${customer.customerName}</td>
+                                         <td>${customer.customerAddress}</td>
+                                         <td>${customer.customerEmail}</td>
+                                         <td>${customer.customerCreatedAt}</td>
+                                         <td>
+                                             <button onclick="deleteCustomer(${customer.customerId})">Delete</button>
+                                             <button onclick="updateCustomerForm(${customer.customerId})">Update</button>
+                                         </td>`;
+                        customerTableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching customers:', error));
+        }
+
+        function addCustomerForm() {
+            if (document.getElementById("updateForm")) {
+                document.getElementById("updateForm").style.display = "none";
+            }
+            document.getElementById("addCustomerForm").style.display = "block";
+        }
+
+        document.getElementById("addForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const customerData = {
+                customerName: formData.get('customerName'),
+                customerAddress: formData.get('customerAddress'),
+                customerEmail: formData.get('customerEmail'),
+                customerCreatedAt: formData.get('customerCreatedAt')
+            };
+            fetch('/api/customers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(customerData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Failed to add customer');
+                }
+            })
+            .then(data => {
+                console.log('Customer added successfully:', data);
+                document.getElementById("addCustomerForm").style.display = "none";
+                document.getElementById("addForm").reset();
+                showCustomers();
+            })
+            .catch(error => console.error('Error adding customer:', error));
+        });
+
+        function deleteCustomer(customerId) {
+            fetch(`/api/customers/${customerId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Customer deleted successfully');
+                    showCustomers();
+                } else {
+                    throw new Error('Failed to delete customer');
+                }
+            })
+            .catch(error => console.error('Error deleting customer:', error));
+        }
+
+        function updateCustomerForm(customerId) {
+            if (document.getElementById("addCustomerForm")) {
+                document.getElementById("addCustomerForm").style.display = "none";
+            }
+            fetch(`/api/customers/${customerId}`)
+                .then(response => response.json())
+                .then(customer => {
+                    const updateForm = document.getElementById("updateForm");
+                    updateForm.style.display = "block";
+                    updateForm.innerHTML = `<form id="updateCustomerForm">
+                                                <h2>Update Customer</h2>    
+                                                <label for="customerIdToUpdate">Customer ID:</label><br>
+                                                <input type="text" id="customerIdToUpdate" name="customerIdToUpdate" value="${customerId}" readonly><br>
+                                                <label for="updatedName">Name :</label><br>
+                                                <input type="text" id="updatedName" name="updatedName" ><br>
+                                                <label for="updatedAddress">Address :</label><br>
+                                                <input type="text" id="updatedAddress" name="updatedAddress"><br>
+                                                <label for="updatedEmail">Email :</label><br>
+                                                <input type="text" id="updatedEmail" name="updatedEmail" ><br><br>
+                                                <button type="button" onclick="updateCustomer(${customerId})">Update</button>
+                                            </form>`;
+                    updateForm.innerHTML += `<button onclick="closeUpdateForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>`;
+                })
+                .catch(error => console.error('Error fetching customer data for update:', error));
+        }
+
+        function searchCustomer() {
+            const searchInput = document.getElementById("searchInput").value.toLowerCase(); 
+            fetch('/api/customers')
+                .then(response => response.json())
+                .then(data => {
+                    const customerTableBody = document.getElementById("customerTableBody");
+                    const allRows = customerTableBody.getElementsByTagName("tr");
+                    Array.from(allRows).forEach(row => {
+                        const customerId = row.getElementsByTagName("td")[0].innerText.toLowerCase(); 
+                        const customerName = row.getElementsByTagName("td")[1].innerText.toLowerCase();
+                        const customerAddress = row.getElementsByTagName("td")[2].innerText.toLowerCase();
+                        const customerEmail = row.getElementsByTagName("td")[3].innerText.toLowerCase();
+                        if (
+                            customerId.includes(searchInput) ||
+                            customerName.includes(searchInput) ||
+                            customerAddress.includes(searchInput) ||
+                            customerEmail.includes(searchInput)
+                        ) {
+                            row.style.display = ""; 
+                        } else {
+                            row.style.display = "none"; 
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching customers:', error));
+        }
+
+        function updateCustomer(customerId) {
+            const updatedName = document.getElementById("updatedName").value;
+            const updatedAddress = document.getElementById("updatedAddress").value;
+            const updatedEmail = document.getElementById("updatedEmail").value;
+            const updatedCustomerData = {
+                customerName: updatedName,
+                customerAddress: updatedAddress,
+                customerEmail: updatedEmail
+            };
+            fetch(`/api/customers/${customerId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedCustomerData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Customer updated successfully');
+                    document.getElementById("updateForm").style.display = "none";
+                    showCustomers();
+                } else {
+                    throw new Error('Failed to update customer');
+                }
+            })
+            .catch(error => console.error('Error updating customer:', error));
+        }
+
+        function closeAddCustomerForm() {
+            document.getElementById("addCustomerForm").style.display = "none";
+        }
+
+        function closeUpdateForm() {
+            document.getElementById("updateForm").style.display = "none";
+        }
+    </script>
+</body>
+</html>

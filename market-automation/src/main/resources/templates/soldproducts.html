@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sold Product Operations</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #1f1f1f;
+        color: #e0e0e0;
+    }
+    
+    h1 {
+    text-align: center;
+    color: #e0e0e0;
+    }
+
+
+    .nav-menu {
+        list-style-type: none;
+        padding: 0;
+        text-align: center;
+    }
+
+    li {
+        display: inline-block;
+        margin: 10px;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #333; 
+        color: #e0e0e0;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #555; 
+    }
+
+    input[type="text"], input[type="date"] {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+        background-color: #2b2b2b;
+        color: #e0e0e0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        color: #e0e0e0;
+    }
+
+    th, td {
+        border: 1px solid #333;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #333; 
+        color: #e0e0e0;
+    }
+
+    #addSoldProductForm {
+        text-align: center;
+        margin-top: 20px;
+        display: none;
+    }
+
+    #addSoldForm {
+        display: inline-block;
+        text-align: left;
+    }
+
+    #updateSoldProductForm {
+        text-align: left;
+    }
+    #addSoldProductForm,
+    #updateSoldProductForm {
+    position: fixed;
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    background-color: rgba(31, 31, 31, 0.9); 
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 999; 
+}
+</style>
+
+    
+   </head>
+     <body>
+       <h1>Sold Product Operations</h1>
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="nav-menu">
+                    <li><button onclick="showSoldProducts()">Show All Sold Products</button></li>
+                    <li><button onclick="addSoldProductForm()">Add Sold Product</button></li>
+                    <li>       
+                        <input type="text" id="searchInput" placeholder="Search...">
+                        <button onclick="searchSoldProduct()">Search Sold Product</button>
+                    </li> 
+                </ul>
+                <div id="soldProductData">
+                    <table class="table">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Sold Product ID</th>
+                                <th>Sale ID</th>
+                                <th>Product ID</th>
+                                <th>Quantity</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="soldProductTableBody"></tbody>
+                    </table>
+                </div>
+                <div id="addSoldProductForm" style="display: none;">
+                    <h2>Add Sold Product</h2>
+                    <form id="addSoldForm">
+                     	<button type="button" onclick="closeAddSoldProductForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+                        <label for="saleId">Sale ID:</label><br>
+                        <input type="text" id="saleId" name="saleId"><br>
+                        <label for="productId">Product ID:</label><br>
+                        <input type="text" id="productId" name="productId"><br>
+                        <label for="soldQuantity">Quantity:</label><br>
+                        <input type="text" id="soldQuantity" name="soldQuantity"><br>
+                        <label for="date">Date:</label><br>
+                        <input type="date" id="soldDate" name="soldDate"><br><br>
+                        <button type="button" onclick="submitForm()">Add Sold Product</button>
+                    </form>
+                </div>
+                <div id="updateSoldProductForm" style="display: none;">
+                 <button type="button" onclick="closeUpdateForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+                </div>
+            </div>
+        </div>
+
+    <script>
+    window.onload = function() {
+        showSoldProducts();
+    };
+    function addSoldProductForm() {
+        if (document.getElementById("updateSoldProductForm")) {
+            document.getElementById("updateSoldProductForm").style.display = "none";
+        }
+        document.getElementById("addSoldProductForm").style.display = "block";
+    }
+
+    function submitForm() {
+        const formData = new FormData(document.getElementById("addSoldForm"));
+        const soldProductData = {
+            saleId: formData.get('saleId'),
+            productId: formData.get('productId'),
+            soldQuantity: formData.get('soldQuantity'),
+            soldDate: formData.get('soldDate')
+        };
+        fetch('/api/sold-products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(soldProductData)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Error adding sold product');
+            }
+        })
+        .then(data => {
+            console.log('Sold product added successfully:', data);
+            document.getElementById("addSoldProductForm").style.display = "none";
+            document.getElementById("addSoldForm").reset();
+            showSoldProducts();
+        })
+        .catch(error => console.error('Error adding sold product:', error));
+    }
+
+    function showSoldProducts() {
+        fetch('/api/sold-products')
+            .then(response => response.json())
+            .then(data => {
+                const soldProductTableBody = document.getElementById("soldProductTableBody");
+                soldProductTableBody.innerHTML = ''; 
+                data.forEach(soldProduct => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = 
+                        `<td>${soldProduct.soldId}</td>
+                        <td>${soldProduct.saleId}</td>
+                        <td>${soldProduct.productId}</td>
+                        <td>${soldProduct.soldQuantity}</td>
+                        <td>${soldProduct.soldDate}</td>
+                        <td>
+                            <button onclick="deleteSoldProduct(${soldProduct.soldId})">Delete</button>
+                            <button onclick="updateSoldProductForm(${soldProduct.soldId})">Update</button>
+                        </td>`;
+                    soldProductTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching sold products:', error));
+    }
+
+    function searchSoldProduct() {
+        const searchQuery = document.getElementById("searchInput").value.toLowerCase(); 
+        const soldProductsTableBody = document.getElementById("soldProductTableBody");
+        const allRows = soldProductsTableBody.getElementsByTagName("tr");
+        
+        Array.from(allRows).forEach(row => {
+            const soldId = row.getElementsByTagName("td")[0].innerText.toLowerCase();
+            const saleId = row.getElementsByTagName("td")[1].innerText.toLowerCase();
+            const productId = row.getElementsByTagName("td")[2].innerText.toLowerCase(); 
+            const soldQuantity = row.getElementsByTagName("td")[3].innerText.toLowerCase();
+
+            if (
+                soldId.includes(searchQuery) ||
+                saleId.includes(searchQuery) ||
+                productId.includes(searchQuery) ||
+                soldQuantity.includes(searchQuery)
+            ) {
+                row.style.display = ""; 
+            } else {
+                row.style.display = "none"; 
+            }
+        });
+    }
+
+    function updateSoldProductForm(soldId) {
+        if (document.getElementById("addSoldProductForm")) {
+            document.getElementById("addSoldProductForm").style.display = "none";
+        }
+        fetch(`/api/sold-products/${soldId}`)
+            .then(response => response.json())
+            .then(soldProduct => {
+                const updateForm = document.getElementById("updateSoldProductForm");
+                updateForm.style.display = "block";
+                updateForm.innerHTML = `<form id="updateSoldForm">
+                							<h2>Update Sold Product</h2>
+                                            <label for="updatedQuantity">Quantity :</label><br>
+                                            <input type="text" id="updatedQuantity" name="updatedQuantity" value="${soldProduct.soldQuantity}"><br>
+                                            <label for="updatedSaleId">Sale ID :</label><br>
+                                            <input type="text" id="updatedSaleId" name="updatedSaleId" value="${soldProduct.saleId}"><br>
+                                            <label for="updatedProductId">Product ID :</label><br>
+                                            <input type="text" id="updatedProductId" name="updatedProductId" value="${soldProduct.productId}"><br>
+                                            <label for="updatedDate">Date :</label><br>
+                                            <input type="date" id="updatedDate" name="updatedDate" value="${soldProduct.soldDate}"><br><br>
+                                            <button type="button" onclick="updateSoldProduct(${soldId})">Update</button>
+                                            <button type="button" onclick="closeUpdateForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+                                        </form>`;
+            })
+            .catch(error => console.error('Error fetching sold product details for update:', error));
+    }
+
+    function updateSoldProduct(soldId) {
+        const updatedSaleId = document.getElementById("updatedSaleId").value;
+    	const updatedProductId = document.getElementById("updatedProductId").value;
+    	const updatedQuantity = document.getElementById("updatedQuantity").value;
+        const updatedDate = document.getElementById("updatedDate").value;
+        const updatedSoldProductData = {
+             saleId: updatedSaleId,
+        	 productId: updatedProductId,
+           	 soldQuantity: updatedQuantity,
+             date: updatedDate
+        };
+        fetch(`/api/sold-products/${soldId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedSoldProductData)
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Sold product updated successfully');
+                document.getElementById("updateSoldProductForm").style.display = "none";
+                showSoldProducts();
+            } else {
+                throw new Error('Failed to update sold product');
+            }
+        })
+        .catch(error => console.error('Error updating sold product:', error));
+    }
+
+    function deleteSoldProduct(soldId) {
+        fetch(`/api/sold-products/${soldId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Sold product deleted successfully');
+                showSoldProducts();
+            } else {
+                throw new Error('Failed to delete sold product');
+            }
+        })
+        .catch(error => console.error('Error deleting sold product:', error));
+    }
+    function closeAddSoldProductForm() {
+        document.getElementById("addSoldProductForm").style.display = "none";
+    }
+
+    function closeUpdateForm() {
+        document.getElementById("updateSoldProductForm").style.display = "none";
+    }
+    </script>
+</body>
+</html>

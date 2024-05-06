@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Operations</title>
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #1f1f1f;
+        color: #e0e0e0;
+    }
+    
+    h1 {
+    text-align: center;
+    color: #e0e0e0;
+    }
+
+    .nav-menu {
+        list-style-type: none;
+        padding: 0;
+        text-align: center;
+    }
+
+    li {
+        display: inline-block;
+        margin: 10px;
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #333;
+        color: #e0e0e0;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #555; 
+    }
+
+    input[type="text"], input[type="date"] {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+        background-color: #2b2b2b;
+        color: #e0e0e0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        color: #e0e0e0;
+    }
+
+    th, td {
+        border: 1px solid #333;
+        padding: 8px;
+        text-align: left;
+    }
+
+    th {
+        background-color: #333; 
+        color: #e0e0e0;
+    }
+
+    #addStockForm {
+        text-align: center;
+        margin-top: 20px;
+        display: none;
+    }
+
+    #updateStockForm {
+        text-align: left;
+        display: none;
+        margin-top: 20px;
+    }
+
+    #updateForm {
+        display: inline-block;
+    }
+    #addStockForm,
+    #updateStockForm {
+    position: fixed;
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    background-color: rgba(31, 31, 31, 0.9); 
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 999; 
+}
+    
+</style>
+    
+      </head>
+      <body>
+           <h1>Stock Operations</h1>
+            <div class="row">
+                <div class="col-md-12">
+                  
+                    <ul class="nav-menu">
+                        <li><button onclick="showStock()">Show All Stock</button></li>
+                        <li><button onclick="addStockForm()">Add New Stock</button></li>
+                        <li>       
+                        <input type="text" id="searchInput" placeholder="Search...">
+                        <button onclick="searchStock()">Search Stock</button>
+                        </li> 
+                    </ul>
+
+                   
+                    <div id="stockData">
+                        <table class="table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Stock ID</th>
+                                    <th>Product ID</th>
+                                    <th>Quantity</th>
+                                    <th>Last Updated At</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTableBody">
+                               
+                            </tbody>
+                        </table>
+                    </div>
+
+                   
+                    <div id="addStockForm" style="display: none;">
+                       <button onclick="closeAddStockForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+           		 		<h2>Add New Stock</h2>
+         				 <form id="addStockFormElement"> 
+          		 			<label for="addStockProductId">Product ID:</label><br> 
+          				 	<input type="text" id="addStockProductId" name="productId"><br>
+          					 <label for="addStockQuantity">Quantity:</label><br> 
+         			 		<input type="text" id="addStockQuantity" name="stockQuantity"><br><br>
+         			 	<button type="submit">Add Stock</button>
+            			</form>
+					</div>
+
+                    
+                    <div id="updateStockForm" style="display: none;">
+                     <button onclick="closeUpdateForm()" style="position: absolute; top: 10px; right: 10px;">&#10006;</button>
+                        <form id="updateForm">
+                        	<h2>Update Stock</h2>
+                            <label for="stockIdToUpdate">Stock ID :</label><br>
+                            <input type="text" id="stockIdToUpdate" name="stockIdToUpdate" readonly><br>
+                            <label for="updatedProductId">Product ID :</label><br>
+                            <input type="text" id="updatedProductId" name="updatedProductId"><br>
+                            <label for="updateStockQuantity">Quantity :</label><br>
+                            <input type="text" id="updateStockQuantity" name="updateStockQuantity"><br><br>
+                            <button type="button" onclick="updateStock()">Update Stock</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+    <script>
+    window.onload = function() {
+    	showStock();
+    };
+    
+    function addStockForm() {
+        if (document.getElementById("updateStockForm").style.display === "block") {
+            document.getElementById("updateStockForm").style.display = "none";
+        }
+        document.getElementById("addStockForm").style.display = "block";
+    }
+
+    document.getElementById("addStockFormElement").addEventListener("submit", function(event) { 
+        event.preventDefault(); 
+        const formData = new FormData(this);
+        const stockData = {
+            productId: parseInt(formData.get('productId')),
+            stockQuantity: parseInt(formData.get('stockQuantity'))
+        };
+        fetch('/api/stock', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(stockData)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to add stock');
+            }
+        })
+        .then(data => {
+            console.log('Stock added successfully:', data);
+            document.getElementById("addStockForm").style.display = "none";
+            document.getElementById("addStockFormElement").reset(); 
+            showStock();
+        })
+        .catch(error => console.error('Error adding stock:', error));
+    });
+
+    
+    function showStock() {
+        fetch('/api/stock')
+            .then(response => response.json())
+            .then(data => {
+                const stockTableBody = document.getElementById("stockTableBody");
+                stockTableBody.innerHTML = ''; 
+                data.forEach(stock => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `<td>${stock.stockId}</td>
+                                     <td>${stock.productId}</td>
+                                     <td>${stock.stockQuantity}</td>
+                                     <td>${stock.lastUpdatedAt}</td>
+                                     <td>
+                                         <button onclick="deleteStock(${stock.stockId})">Delete</button>
+                                         <button onclick="populateUpdateForm(${stock.stockId})">Update</button>
+                                     </td>`;
+                    stockTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching stock:', error));
+    }
+
+    function searchStock() {
+        const searchQuery = document.getElementById("searchInput").value.toLowerCase(); 
+        const stockTableBody = document.getElementById("stockTableBody");
+        const allRows = stockTableBody.getElementsByTagName("tr");
+        
+        Array.from(allRows).forEach(row => {
+            const stockId = row.getElementsByTagName("td")[0].innerText.toLowerCase(); 
+            const productId = row.getElementsByTagName("td")[1].innerText.toLowerCase(); 
+            const stockQuantity = row.getElementsByTagName("td")[2].innerText.toLowerCase(); 
+
+            if (
+                stockId.includes(searchQuery) ||
+                productId.includes(searchQuery) ||
+                stockQuantity.includes(searchQuery)
+            ) {
+                row.style.display = ""; 
+            } else {
+                row.style.display = "none"; 
+            }
+        });
+    }
+
+    function deleteStock(stockId) {
+        fetch(`/api/stock/${stockId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Stock deleted successfully');
+                showStock();
+            } else {
+                throw new Error('Failed to delete stock');
+            }
+        })
+        .catch(error => console.error('Error deleting stock:', error));
+    }
+
+    function populateUpdateForm(stockId) {
+        if (document.getElementById("addStockForm").style.display === "block") {
+            document.getElementById("addStockForm").style.display = "none";
+        }
+        fetch(`/api/stock/${stockId}`)
+            .then(response => response.json())
+            .then(stock => {
+                document.getElementById("updateForm").reset();
+                document.getElementById("stockIdToUpdate").value = stock.stockId;
+                document.getElementById("updatedProductId").value = stock.productId;
+                document.getElementById("updateStockQuantity").value = stock.stockQuantity;
+                document.getElementById("updateStockForm").style.display = "block";
+            })
+            .catch(error => console.error('Error fetching stock details for update:', error));
+    }
+
+    function updateStock() {
+        const stockIdToUpdate = document.getElementById("stockIdToUpdate").value;
+        const updatedProductId = document.getElementById("updatedProductId").value;
+        const updatedQuantity = document.getElementById("updateStockQuantity").value;
+
+        const stockData = {
+            productId: updatedProductId,
+            stockQuantity: parseInt(updatedQuantity)
+        };
+
+        fetch(`/api/stock/${stockIdToUpdate}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(stockData)
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Stock updated successfully');
+                updateLastUpdatedAt(stockIdToUpdate); 
+                document.getElementById("updateStockForm").style.display = "none";
+                showStock();
+            } else {
+                throw new Error('Failed to update stock');
+            }
+        })
+        .catch(error => console.error('Error updating stock:', error));
+    }
+
+    function updateLastUpdatedAt(stockId) {
+        const currentTime = new Date().toISOString(); 
+        fetch(`/api/stock/${stockId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                lastUpdatedAt: currentTime,
+                productId: document.getElementById("updatedProductId").value,
+                stockQuantity: parseInt(document.getElementById("updateStockQuantity").value)
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Last updated at time and other values updated successfully');
+                showStock();
+            } else {
+                throw new Error('Failed to update last updated at time and other values');
+            }
+        })
+        .catch(error => console.error('Error updating last updated at time and other values:', error));
+    }
+    function closeAddStockForm() {
+        document.getElementById("addStockForm").style.display = "none";
+    }
+
+    function closeUpdateForm() {
+        document.getElementById("updateStockForm").style.display = "none";
+    }
+
+
+
+    </script>
+</body>
+</html>
